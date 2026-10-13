@@ -1,0 +1,259 @@
+<title>Arunika Ops Center</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: operations wall. KPI rail on top, Java-Bali live map hero, right column (alerts + servicing), bottom row (route occupancy + departures board). Single dark theme by design. */
+:root{
+  --bg:#05090C; --panel:#0B1318; --panel2:#101B22; --line:#1A2A33;
+  --fg:#E9F1F2; --muted:#7A9097; --amber:#FFB020; --teal:#2EE6C5; --ok:#5BE38A; --warn:#FFB020; --bad:#FF5D5D; --sea:#07131A; --land:#0F2026;
+  --display:"Archivo",system-ui,sans-serif; --mono:"DM Mono",ui-monospace,monospace;
+  color-scheme:dark;
+}
+html,body{background:var(--bg);color:var(--fg)}
+body{padding-block:14px;padding-inline:16px;font-family:var(--display);font-size:13px;background:radial-gradient(900px 500px at 30% 0%,rgba(46,230,197,.08),transparent 60%),radial-gradient(800px 500px at 100% 100%,rgba(255,176,32,.07),transparent 60%),var(--bg)}
+.wrap{max-width:1500px;margin:0 auto;display:grid;gap:12px}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:12px}
+.mark{width:38px;height:38px;border-radius:10px;background:linear-gradient(135deg,var(--amber),#ff7a1a);display:grid;place-items:center;font-weight:900;font-stretch:125%;color:#1b0f00;font-size:18px;box-shadow:0 0 30px rgba(255,176,32,.35)}
+.brand h1{margin:0;font-weight:800;font-stretch:125%;font-size:20px;letter-spacing:.04em;text-transform:uppercase}
+.brand small{display:block;font-family:var(--mono);font-size:10.5px;color:var(--muted);letter-spacing:.14em;text-transform:uppercase}
+.hright{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.livep{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;border:1px solid var(--line);border-radius:999px;padding:6px 11px;background:var(--panel)}
+.livep i{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pl 1.6s infinite}
+@keyframes pl{0%{box-shadow:0 0 0 0 rgba(91,227,138,.7)}70%{box-shadow:0 0 0 9px rgba(91,227,138,0)}100%{box-shadow:0 0 0 0 rgba(91,227,138,0)}}
+.clock{font-weight:800;font-stretch:115%;font-size:24px;font-variant-numeric:tabular-nums;color:var(--teal)}
+.kpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+@media(max-width:1000px){.kpis{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:560px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.k{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 13px;position:relative;overflow:hidden}
+.k small{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.k b{display:block;font-weight:800;font-stretch:112%;font-size:26px;line-height:1.15;font-variant-numeric:tabular-nums;margin-top:3px}
+.k em{font-style:normal;font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.k .spark{position:absolute;right:8px;bottom:8px;width:70px;height:24px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:12px}
+@media(max-width:1100px){.main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px;min-width:0;position:relative}
+.ttl{display:flex;justify-content:space-between;align-items:center;gap:8px;font-family:var(--mono);font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:9px}
+.mapbox{position:relative;width:100%;aspect-ratio:2.35/1;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#0B1C23,var(--sea) 70%)}
+canvas{position:absolute;inset:0;width:100%;height:100%}
+.legend{position:absolute;left:10px;bottom:10px;display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--muted);background:rgba(5,9,12,.78);padding:6px 10px;border-radius:6px}
+.legend i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.busd{position:absolute;right:10px;top:10px;width:240px;max-width:calc(100% - 20px);background:rgba(5,9,12,.9);border:1px solid var(--line);border-radius:10px;padding:11px;backdrop-filter:blur(6px)}
+.busd h4{margin:0;font-weight:800;font-stretch:115%;font-size:16px}
+.busd .r{font-family:var(--mono);font-size:11px;color:var(--teal);margin:2px 0 8px}
+.busd dl{display:grid;grid-template-columns:auto 1fr;gap:4px 10px;margin:0;font-size:12px}
+.busd dt{color:var(--muted)} .busd dd{margin:0;text-align:right;font-variant-numeric:tabular-nums}
+.meter{height:6px;border-radius:3px;background:var(--panel2);overflow:hidden;margin-top:8px}
+.meter i{display:block;height:100%}
+.side{display:grid;gap:12px;align-content:start;min-width:0}
+.alerts{display:flex;flex-direction:column;gap:8px;max-height:300px;overflow:auto}
+.al{border-radius:10px;padding:9px 10px;background:var(--panel2);border-left:3px solid var(--line);animation:in .5s ease}
+@keyframes in{from{opacity:.2;transform:translateX(8px)}}
+.al.bad{border-color:var(--bad)} .al.warn{border-color:var(--warn)} .al.ok{border-color:var(--teal)}
+.al time{font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.al p{margin:3px 0 0;line-height:1.4;font-size:12.5px}
+.al .act{display:block;margin-top:4px;color:var(--teal);font-size:12px}
+.svc{display:grid;gap:9px}
+.sv{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center}
+.sv .id{font-family:var(--mono);font-size:11px;background:var(--panel2);padding:4px 7px;border-radius:6px}
+.sv .bar{height:7px;border-radius:4px;background:var(--panel2);overflow:hidden}
+.sv .bar i{display:block;height:100%;border-radius:4px}
+.sv small{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}
+.sv .km{font-family:var(--mono);font-size:11px;text-align:right}
+.donutrow{display:flex;gap:14px;align-items:center}
+.donutrow svg{flex:none}
+.dl{display:grid;gap:5px;font-size:12px}
+.dl span i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
+.bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr);gap:12px}
+@media(max-width:1000px){.bottom{grid-template-columns:1fr}}
+.occ{display:grid;gap:8px}
+.oc{display:grid;grid-template-columns:150px minmax(0,1fr) 46px;gap:10px;align-items:center;font-size:12px}
+.oc .bar{height:16px;border-radius:4px;background:var(--panel2);overflow:hidden;position:relative}
+.oc .bar i{position:absolute;inset:0 auto 0 0;border-radius:4px;transition:width 1.2s cubic-bezier(.2,.8,.2,1)}
+.oc .p{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+.board{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:560px;font-variant-numeric:tabular-nums}
+th{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);text-align:left;font-weight:400;padding:6px 8px;border-bottom:1px solid var(--line)}
+td{padding:7px 8px;border-bottom:1px solid rgba(26,42,51,.7)}
+td.flap{font-family:var(--mono);font-size:13px;color:var(--amber);letter-spacing:.06em}
+.st{font-family:var(--mono);font-size:10.5px;padding:2px 8px;border-radius:4px}
+.st.go{background:rgba(91,227,138,.14);color:var(--ok)} .st.board{background:rgba(46,230,197,.14);color:var(--teal)} .st.late{background:rgba(255,93,93,.14);color:var(--bad)} .st.full{background:rgba(255,176,32,.14);color:var(--amber)}
+.seat{font-family:var(--mono);font-size:12px}
+@media (prefers-reduced-motion:reduce){.livep i,.al{animation:none}}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="brand"><div class="mark">A</div><div><h1>Arunika Trans</h1><small>Operations Center · Jawa–Bali</small></div></div>
+  <div class="hright"><div class="livep"><i></i>LIVE · 214 SENSOR GPS</div><div class="clock" id="clock">--:--:--</div></div>
+</header>
+
+<div class="kpis">
+  <div class="k"><small>Armada di jalan</small><b id="kRoad">0</b><em id="kRoadN">dari 68 unit</em><svg class="spark" viewBox="0 0 70 24" id="sp1"></svg></div>
+  <div class="k"><small>Penumpang hari ini</small><b id="kPax">0</b><em>tiket terscan</em><svg class="spark" viewBox="0 0 70 24" id="sp2"></svg></div>
+  <div class="k"><small>Okupansi rata-rata</small><b id="kOcc" style="color:var(--teal)">0%</b><em>target 75%</em></div>
+  <div class="k"><small>Pendapatan hari ini</small><b id="kRev" style="color:var(--amber)">Rp 0</b><em>tiket + paket</em><svg class="spark" viewBox="0 0 70 24" id="sp3"></svg></div>
+  <div class="k"><small>Tepat waktu</small><b id="kOtp" style="color:var(--ok)">0%</b><em id="kLate">0 bus terlambat</em></div>
+  <div class="k"><small>Perlu servis</small><b id="kSvc" style="color:var(--bad)">0</b><em>dalam 500 km</em></div>
+</div>
+
+<div class="main">
+  <section class="card">
+    <div class="ttl"><span>Posisi armada · Jawa–Bali</span><span id="mapNote">Klik bus untuk detail</span></div>
+    <div class="mapbox">
+      <canvas id="map"></canvas>
+      <div class="busd" id="busd"></div>
+      <div class="legend"><span><i style="background:#5BE38A"></i>Okupansi ≥ 80%</span><span><i style="background:#2EE6C5"></i>50–79%</span><span><i style="background:#7A9097"></i>&lt; 50%</span><span><i style="background:#FF5D5D"></i>Butuh perhatian</span></div>
+    </div>
+  </section>
+  <aside class="side">
+    <section class="card">
+      <div class="ttl"><span>Agent operasional</span><span style="color:var(--teal)">● memantau</span></div>
+      <div class="alerts" id="alerts"></div>
+    </section>
+    <section class="card">
+      <div class="ttl"><span>Kesehatan armada</span></div>
+      <div class="donutrow"><svg width="96" height="96" viewBox="0 0 96 96" id="donut"></svg><div class="dl" id="dl"></div></div>
+      <div class="ttl" style="margin-top:14px"><span>Jadwal servis terdekat</span><span>sisa km</span></div>
+      <div class="svc" id="svc"></div>
+    </section>
+  </aside>
+</div>
+
+<div class="bottom">
+  <section class="card">
+    <div class="ttl"><span>Okupansi per rute</span><span>hari ini</span></div>
+    <div class="occ" id="occ"></div>
+  </section>
+  <section class="card">
+    <div class="ttl"><span>Papan keberangkatan</span><span id="boardT"></span></div>
+    <div class="board"><table><thead><tr><th>Jam</th><th>Rute</th><th>Bus</th><th>Kelas</th><th>Kursi</th><th>Status</th></tr></thead><tbody id="dep"></tbody></table></div>
+  </section>
+</div>
+</div>
+
+<script>
+// ---------- geography ----------
+const B={lon0:104.6,lon1:116.9,lat0:-9.25,lat1:-4.6};
+const LAND=[
+ [[104.6,-4.6],[105.9,-4.6],[105.95,-5.3],[105.8,-5.85],[105.25,-5.55],[104.7,-5.95],[104.6,-5.6]],
+ [[105.2,-6.05],[106.0,-5.9],[106.8,-6.05],[107.6,-6.2],[108.3,-6.25],[108.6,-6.7],[109.5,-6.82],[110.4,-6.95],[110.9,-6.4],[111.5,-6.62],[112.1,-6.88],[112.65,-7.05],[112.9,-7.5],[113.6,-7.7],[114.4,-7.75],[114.6,-8.6],[114.0,-8.62],[113.2,-8.3],[112.4,-8.42],[111.5,-8.3],[110.6,-8.12],[109.8,-7.78],[109.0,-7.72],[108.2,-7.8],[107.4,-7.5],[106.5,-7.42],[105.8,-6.86],[105.2,-6.8]],
+ [[112.7,-6.9],[113.5,-6.85],[114.1,-6.95],[113.8,-7.2],[113.0,-7.22],[112.75,-7.12]],
+ [[114.45,-8.1],[115.1,-8.05],[115.7,-8.38],[115.2,-8.82],[114.6,-8.45]],
+ [[115.85,-8.3],[116.4,-8.22],[116.7,-8.5],[116.45,-8.92],[115.9,-8.82]]
+];
+const C={JKT:["Jakarta",106.85,-6.2],MRK:["Merak",106.0,-5.93],BDG:["Bandung",107.6,-6.9],CRB:["Cirebon",108.55,-6.72],TGL:["Tegal",109.14,-6.87],SMG:["Semarang",110.42,-6.99],PWT:["Purwokerto",109.24,-7.42],YOG:["Yogyakarta",110.37,-7.8],SOC:["Solo",110.82,-7.57],SBY:["Surabaya",112.75,-7.25],MLG:["Malang",112.63,-7.98],BWI:["Banyuwangi",114.37,-8.2],DPS:["Denpasar",115.22,-8.65]};
+const R=[
+ {id:"JKT-BDG",a:"JKT",b:"BDG",via:[[107.15,-6.45]]},
+ {id:"JKT-SMG",a:"JKT",b:"SMG",via:[[107.6,-6.4],"CRB","TGL"]},
+ {id:"JKT-YOG",a:"JKT",b:"YOG",via:["CRB",[108.9,-7.0],"PWT",[109.9,-7.75]]},
+ {id:"SMG-SBY",a:"SMG",b:"SBY",via:[[111.0,-7.05],[111.7,-7.3],[112.3,-7.3]]},
+ {id:"YOG-SBY",a:"YOG",b:"SBY",via:["SOC",[111.5,-7.55],[112.2,-7.45]]},
+ {id:"SBY-MLG",a:"SBY",b:"MLG",via:[[112.7,-7.6]]},
+ {id:"SBY-DPS",a:"SBY",b:"DPS",via:[[113.4,-7.75],"BWI",[114.75,-8.35]]},
+ {id:"JKT-MRK",a:"JKT",b:"MRK",via:[[106.4,-6.1]]},
+ {id:"BDG-YOG",a:"BDG",b:"YOG",via:[[108.3,-7.25],"PWT",[109.9,-7.75]]},
+ {id:"SMG-SOC",a:"SMG",b:"SOC",via:[[110.6,-7.3]]}
+];
+const pt=x=>typeof x==="string"?[C[x][1],C[x][2]]:x;
+R.forEach(r=>{r.p=[pt(r.a),...r.via.map(pt),pt(r.b)];r.seg=[];r.len=0;for(let i=1;i<r.p.length;i++){const d=Math.hypot(r.p[i][0]-r.p[i-1][0],r.p[i][1]-r.p[i-1][1]);r.seg.push(d);r.len+=d}});
+// ---------- fleet ----------
+let s=11;const rnd=()=>(s=(s*16807)%2147483647)/2147483647;
+const DRV=["Agus S.","Budi H.","Darmawan","Eko P.","Fajrul","Gunawan","Heru W.","Imam","Joko S.","Kurniawan","Lukman","Made A.","Nyoman K.","Rudi T.","Slamet","Teguh","Wahyu","Yusuf"];
+const CLS=["Executive","Sleeper","Executive","Super Top","Executive"];
+const bus=[];
+for(let i=0;i<58;i++){const r=R[i%R.length];const cap=r.id==="SBY-DPS"||r.id==="JKT-YOG"?(i%3?32:22):40;
+ bus.push({id:"AR-"+String(101+i).padStart(3,"0"),plate:["B","D","H","L","AB","DK"][i%6]+" "+(7000+Math.floor(rnd()*2999))+" "+["AT","TR","KN","UB"][i%4],r,t:rnd(),dir:rnd()<.5?1:-1,spd:.00028+rnd()*.00022,cap,pax:Math.round(cap*(.35+rnd()*.65)),drv:DRV[i%DRV.length],hrs:+(rnd()*4.6).toFixed(1),svc:Math.round(150+rnd()*9500),eng:Math.round(70+rnd()*30),cls:CLS[i%CLS.length],late:0,trail:[]})}
+bus[7].svc=180;bus[7].eng=61;bus[19].hrs=4.4;bus[23].late=24;bus[31].late=12;bus[42].svc=320;
+const garage=6,total=bus.length+garage+4;
+const flag=b=>b.svc<400||b.eng<65||b.hrs>4.2||b.late>20;
+// ---------- canvas ----------
+const cv=document.getElementById("map"),cx=cv.getContext("2d");let W,H,sx,sy,ox,oy;
+function size(){const r=cv.getBoundingClientRect(),d=devicePixelRatio||1;W=r.width;H=r.height;cv.width=W*d;cv.height=H*d;cx.setTransform(d,0,0,d,0,0);
+ const lw=B.lon1-B.lon0,lh=B.lat1-B.lat0;const sc=Math.min(W/lw,H/(lh*1.0));sx=sc;sy=sc;ox=(W-lw*sc)/2;oy=(H-lh*sc)/2}
+const P=(lon,lat)=>[ox+(lon-B.lon0)*sx,oy+(B.lat1-lat)*sy];
+function posOf(b){let d=b.t*b.r.len;const r=b.r;for(let i=0;i<r.seg.length;i++){if(d<=r.seg[i]||i===r.seg.length-1){const f=Math.min(1,d/r.seg[i]);return[r.p[i][0]+(r.p[i+1][0]-r.p[i][0])*f,r.p[i][1]+(r.p[i+1][1]-r.p[i][1])*f,Math.atan2(-(r.p[i+1][1]-r.p[i][1])*b.dir,(r.p[i+1][0]-r.p[i][0])*b.dir)]}d-=r.seg[i]}}
+const occCol=b=>flag(b)?"#FF5D5D":b.pax/b.cap>=.8?"#5BE38A":b.pax/b.cap>=.5?"#2EE6C5":"#7A9097";
+let sel=bus[7],tick=0;
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+function draw(t){
+ cx.clearRect(0,0,W,H);
+ // grid dots
+ cx.fillStyle="rgba(46,230,197,.06)";for(let x=0;x<W;x+=18)for(let y=0;y<H;y+=18)cx.fillRect(x,y,1,1);
+ // land
+ LAND.forEach(poly=>{cx.beginPath();poly.forEach(([lo,la],i)=>{const[x,y]=P(lo,la);i?cx.lineTo(x,y):cx.moveTo(x,y)});cx.closePath();
+  cx.fillStyle="#0F2026";cx.fill();cx.strokeStyle="rgba(46,230,197,.35)";cx.lineWidth=1.2;cx.shadowColor="rgba(46,230,197,.5)";cx.shadowBlur=8;cx.stroke();cx.shadowBlur=0});
+ cx.fillStyle="rgba(122,144,151,.45)";cx.font="600 11px Archivo, sans-serif";
+ [["LAUT JAWA",110.2,-5.6],["SAMUDRA HINDIA",108.5,-8.75],["SELAT BALI",114.55,-8.95]].forEach(([s,lo,la])=>{const[x,y]=P(lo,la);cx.fillText(s,x,y)});
+ // routes
+ R.forEach(r=>{cx.beginPath();r.p.forEach((p,i)=>{const[x,y]=P(p[0],p[1]);i?cx.lineTo(x,y):cx.moveTo(x,y)});
+  cx.strokeStyle="rgba(255,176,32,.16)";cx.lineWidth=3;cx.stroke();cx.setLineDash([2,7]);cx.lineDashOffset=-t/60;cx.strokeStyle="rgba(255,176,32,.55)";cx.lineWidth=1;cx.stroke();cx.setLineDash([])});
+ // congestion segment (Cikampek)
+ const[c1x,c1y]=P(107.15,-6.32),[c2x,c2y]=P(107.6,-6.4);cx.strokeStyle=`rgba(255,93,93,${.45+.35*Math.sin(t/300)})`;cx.lineWidth=4;cx.beginPath();cx.moveTo(c1x,c1y);cx.lineTo(c2x,c2y);cx.stroke();
+ cx.fillStyle="#FF5D5D";cx.font="10px 'DM Mono', monospace";cx.fillText("PADAT · KM 47–66",c2x+6,c2y-6);
+ // cities
+ Object.values(C).forEach(([n,lo,la],i)=>{const[x,y]=P(lo,la);const pr=(t/1400+i*.37)%1;
+  cx.strokeStyle=`rgba(255,176,32,${1-pr})`;cx.lineWidth=1;cx.beginPath();cx.arc(x,y,4+pr*16,0,Math.PI*2);cx.stroke();
+  cx.fillStyle="#FFB020";cx.beginPath();cx.arc(x,y,3.4,0,Math.PI*2);cx.fill();
+  cx.fillStyle="#E9F1F2";cx.font="600 11px Archivo, sans-serif";cx.fillText(n,x+7,y-6)});
+ // buses
+ bus.forEach(b=>{const[lo,la,ang]=posOf(b);const[x,y]=P(lo,la);b.x=x;b.y=y;b.trail.push([x,y]);if(b.trail.length>22)b.trail.shift();
+  const col=occCol(b);for(let i=1;i<b.trail.length;i++){cx.globalAlpha=i/b.trail.length*.6;cx.strokeStyle=col;cx.lineWidth=2;cx.beginPath();cx.moveTo(...b.trail[i-1]);cx.lineTo(...b.trail[i]);cx.stroke()}cx.globalAlpha=1;
+  cx.save();cx.translate(x,y);cx.rotate(-ang);cx.fillStyle=col;cx.shadowColor=col;cx.shadowBlur=10;cx.beginPath();cx.moveTo(6,0);cx.lineTo(-4,-3.6);cx.lineTo(-4,3.6);cx.closePath();cx.fill();cx.restore();cx.shadowBlur=0;
+  if(flag(b)){const k=(t/900)%1;cx.strokeStyle=`rgba(255,93,93,${1-k})`;cx.lineWidth=1.5;cx.beginPath();cx.arc(x,y,6+k*14,0,Math.PI*2);cx.stroke()}
+  if(b===sel){cx.strokeStyle="#fff";cx.lineWidth=1.2;cx.beginPath();cx.arc(x,y,11,0,Math.PI*2);cx.stroke();cx.beginPath();cx.moveTo(x-16,y);cx.lineTo(x-12,y);cx.moveTo(x+12,y);cx.lineTo(x+16,y);cx.moveTo(x,y-16);cx.lineTo(x,y-12);cx.moveTo(x,y+12);cx.lineTo(x,y+16);cx.stroke()}});
+}
+function step(t){bus.forEach(b=>{b.t+=b.spd*b.dir*(reduce?.2:1);if(b.t>1){b.t=1;b.dir=-1;b.trail=[]}if(b.t<0){b.t=0;b.dir=1;b.trail=[]}});draw(t);requestAnimationFrame(step)}
+cv.addEventListener("click",e=>{const r=cv.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;let best=null,bd=20;bus.forEach(b=>{const d=Math.hypot(b.x-mx,b.y-my);if(d<bd){bd=d;best=b}});if(best){sel=best;detail()}});
+const cn=k=>C[k][0];
+function detail(){const b=sel;const from=b.dir>0?b.r.a:b.r.b,to=b.dir>0?b.r.b:b.r.a;const occ=b.pax/b.cap;const prog=b.dir>0?b.t:1-b.t;const eta=Math.max(8,Math.round((1-prog)*b.r.len*55));
+ const spd=Math.round(68+((b.id.charCodeAt(5)*7+tick)%24));
+ document.getElementById("busd").innerHTML=`<h4>${b.id} <span style="font-weight:500;font-size:12px;color:var(--muted)">${b.plate}</span></h4><div class="r">${cn(from)} → ${cn(to)} · ${b.cls}</div>
+ <dl><dt>Pengemudi</dt><dd>${b.drv}</dd><dt>Jam mengemudi</dt><dd style="color:${b.hrs>4.2?"var(--bad)":"inherit"}">${b.hrs} jam</dd><dt>Kecepatan</dt><dd>${spd} km/j</dd><dt>Penumpang</dt><dd>${b.pax}/${b.cap} kursi</dd><dt>Perkiraan tiba</dt><dd>${Math.floor(eta/60)}j ${eta%60}m${b.late?` <span style="color:var(--bad)">+${b.late}m</span>`:""}</dd><dt>Servis berikutnya</dt><dd style="color:${b.svc<400?"var(--bad)":"inherit"}">${b.svc.toLocaleString("id-ID")} km</dd><dt>Kondisi mesin</dt><dd>${b.eng}%</dd></dl>
+ <div class="meter"><i style="width:${occ*100}%;background:${occCol(b)}"></i></div>`}
+// ---------- KPIs ----------
+let pax=8421,rev=1.284e9,hist={a:[],b:[],c:[]};
+const idr=n=>"Rp "+(n>=1e9?(n/1e9).toLocaleString("id-ID",{maximumFractionDigits:2})+" M":(n/1e6).toLocaleString("id-ID",{maximumFractionDigits:1})+" jt");
+function spark(id,arr,col){const el=document.getElementById(id);if(arr.length<2)return;const mx=Math.max(...arr),mn=Math.min(...arr);const pts=arr.map((v,i)=>`${i/(arr.length-1)*70},${22-(v-mn)/((mx-mn)||1)*20}`).join(" ");el.innerHTML=`<polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5"/>`}
+function kpi(){const road=bus.length;pax+=Math.round(2+Math.random()*6);rev+=Math.round((2+Math.random()*6)*185000);
+ document.getElementById("kRoad").textContent=road;document.getElementById("kRoadN").textContent=`dari ${total} unit · ${garage} di bengkel`;
+ document.getElementById("kPax").textContent=pax.toLocaleString("id-ID");
+ const occ=bus.reduce((s,b)=>s+b.pax/b.cap,0)/bus.length;document.getElementById("kOcc").textContent=Math.round(occ*100)+"%";
+ document.getElementById("kRev").textContent=idr(rev);
+ const late=bus.filter(b=>b.late>0).length;document.getElementById("kOtp").textContent=(100-late/bus.length*100).toFixed(1)+"%";document.getElementById("kLate").textContent=`${late} bus terlambat`;
+ document.getElementById("kSvc").textContent=bus.filter(b=>b.svc<500).length+1;
+ hist.a.push(road+Math.round(Math.random()*2));hist.b.push(pax);hist.c.push(rev);["a","b","c"].forEach(k=>{if(hist[k].length>20)hist[k].shift()});
+ spark("sp1",hist.a,"#7A9097");spark("sp2",hist.b,"#2EE6C5");spark("sp3",hist.c,"#FFB020")}
+// ---------- occupancy per route ----------
+function occ(){const rows=R.map(r=>{const bs=bus.filter(b=>b.r===r);const o=bs.reduce((s,b)=>s+b.pax,0)/bs.reduce((s,b)=>s+b.cap,0);return{n:`${cn(r.a)} – ${cn(r.b)}`,o}}).sort((a,b)=>b.o-a.o);
+ document.getElementById("occ").innerHTML=rows.map(r=>`<div class="oc"><span>${r.n}</span><div class="bar"><i style="width:${r.o*100}%;background:${r.o>=.8?"#5BE38A":r.o>=.5?"#2EE6C5":"#7A9097"}"></i></div><span class="p">${Math.round(r.o*100)}%</span></div>`).join("")}
+// ---------- fleet health ----------
+function health(){const prima=bus.filter(b=>!flag(b)).length,perlu=bus.filter(flag).length;const parts=[["Prima",prima,"#5BE38A"],["Perlu perhatian",perlu,"#FF5D5D"],["Di bengkel",garage,"#FFB020"],["Cadangan",4,"#7A9097"]];const tot=parts.reduce((s,p)=>s+p[1],0);
+ let a=-Math.PI/2,svg="";parts.forEach(([n,v,c])=>{const a2=a+v/tot*Math.PI*2;const r=40,x1=48+r*Math.cos(a),y1=48+r*Math.sin(a),x2=48+r*Math.cos(a2),y2=48+r*Math.sin(a2);svg+=`<path d="M${x1} ${y1} A${r} ${r} 0 ${a2-a>Math.PI?1:0} 1 ${x2} ${y2}" stroke="${c}" stroke-width="10" fill="none"/>`;a=a2+0.04});
+ svg+=`<text x="48" y="46" text-anchor="middle" fill="#E9F1F2" font-family="Archivo" font-weight="800" font-size="20">${Math.round(prima/tot*100)}%</text><text x="48" y="60" text-anchor="middle" fill="#7A9097" font-family="DM Mono" font-size="8">PRIMA</text>`;
+ document.getElementById("donut").innerHTML=svg;document.getElementById("dl").innerHTML=parts.map(([n,v,c])=>`<span><i style="background:${c}"></i>${n} · <b>${v}</b></span>`).join("");
+ const list=[...bus].sort((a,b)=>a.svc-b.svc).slice(0,5);
+ document.getElementById("svc").innerHTML=list.map(b=>{const k=Math.min(1,b.svc/10000);const col=b.svc<400?"#FF5D5D":b.svc<1500?"#FFB020":"#2EE6C5";return`<div class="sv"><span class="id">${b.id}</span><div><small>${cn(b.r.a)} – ${cn(b.r.b)} · rem ${Math.max(18,Math.round(b.eng*.6))}% · ban ${Math.round(b.eng*.8)}%</small><div class="bar"><i style="width:${k*100}%;background:${col}"></i></div></div><span class="km" style="color:${col}">${b.svc.toLocaleString("id-ID")}</span></div>`}).join("")}
+// ---------- departures ----------
+function dep(){const now=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Jakarta"}));const rows=[];
+ for(let i=0;i<7;i++){const m=new Date(now);m.setMinutes(Math.ceil(now.getMinutes()/15)*15+i*15-15,0,0);const r=R[(i*3+now.getHours())%R.length];const b=bus[(i*7+now.getHours())%bus.length];
+  const cap=b.cap,f=Math.min(cap,Math.round(cap*(.55+((i*13)%9)/20)));let st=i===0?["go","BERANGKAT"]:i===1?["board","BOARDING"]:f>=cap?["full","PENUH"]:["board","TERJADWAL"];if(i===3&&r.id==="JKT-SMG")st=["late","TERLAMBAT 15M"];
+  rows.push(`<tr><td class="flap">${String(m.getHours()).padStart(2,"0")}:${String(m.getMinutes()).padStart(2,"0")}</td><td>${cn(r.a)} → ${cn(r.b)}</td><td style="font-family:var(--mono);font-size:12px">${b.id}</td><td>${b.cls}</td><td class="seat">${f}/${cap}</td><td><span class="st ${st[0]}">${st[1]}</span></td></tr>`)}
+ document.getElementById("dep").innerHTML=rows.join("");document.getElementById("boardT").textContent="Terminal utama · "+now.toLocaleDateString("id-ID",{weekday:"long",day:"numeric",month:"long"})}
+// ---------- agent ----------
+const EV=[
+ ["bad",()=>`${bus[19].id} (${bus[19].drv}) sudah mengemudi ${bus[19].hrs} jam tanpa jeda.`,"Pengemudi diarahkan istirahat di rest area berikutnya. Pengemudi cadangan disiagakan."],
+ ["warn",()=>`Permintaan Surabaya – Denpasar naik 38% untuk Jumat malam.`,"Usulan: tambah 2 unit Sleeper. Menunggu persetujuan manajer operasi."],
+ ["bad",()=>`${bus[7].id} tinggal ${bus[7].svc} km menuju servis berkala, suhu mesin naik.`,"Slot bengkel Cikarang besok 07.00 sudah dipesan. Unit pengganti disiapkan."],
+ ["warn",()=>`Kepadatan di Cikampek KM 47–66. ${bus[23].id} diperkirakan terlambat ${bus[23].late} menit.`,"Pesan keterlambatan dikirim ke 31 penumpang via WhatsApp."],
+ ["ok",()=>`Okupansi Jakarta – Yogyakarta mencapai 92%.`,"Harga kursi terakhir disesuaikan sesuai aturan tarif dinamis."],
+ ["ok",()=>`Laporan harian operasional terkirim ke direksi.`,"Ringkasan: okupansi, ketepatan waktu, dan biaya BBM per km."],
+ ["warn",()=>`Konsumsi BBM ${bus[42].id} 14% di atas rata-rata rute.`,"Dijadwalkan pemeriksaan injektor dan pola mengemudi."]
+];
+let ei=0;function alert1(){const[c,m,a]=EV[ei%EV.length];ei++;const t=new Date().toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit",timeZone:"Asia/Jakarta"});const el=document.createElement("div");el.className="al "+c;el.innerHTML=`<time>${t}</time><p>${m()}</p><span class="act">→ ${a}</span>`;const box=document.getElementById("alerts");box.prepend(el);while(box.children.length>7)box.lastChild.remove()}
+// ---------- loops ----------
+function clock(){document.getElementById("clock").textContent=new Date().toLocaleTimeString("id-ID",{timeZone:"Asia/Jakarta"})+" WIB"}
+addEventListener("resize",size);size();for(let i=0;i<3;i++)alert1();for(let i=0;i<12;i++)kpi();occ();health();dep();detail();clock();
+setInterval(clock,1000);setInterval(()=>{tick++;kpi();detail()},2000);setInterval(alert1,6000);
+setInterval(()=>{bus.forEach(b=>{if(Math.random()<.15){b.pax=Math.max(4,Math.min(b.cap,b.pax+Math.round((Math.random()-.4)*4)))}if(b.svc>0)b.svc=Math.max(0,b.svc-Math.round(Math.random()*3))});occ();health()},5000);
+setInterval(dep,30000);requestAnimationFrame(step);
+</script>
